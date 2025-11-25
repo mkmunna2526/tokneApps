@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>টেলিগ্রাম ব্রডকাস্ট সিস্টেম</title>
+    <title>Telegram Broadcast System</title>
     <style>
         * {
             margin: 0;
@@ -201,19 +201,20 @@
 </head>
 <body>
     <div class="container">
-        <h1>📢 টেলিগ্রাম ব্রডকাস্ট সিস্টেম</h1>
-        <p class="subtitle">আপনার বটের সকল ইউজারদের কাছে মেসেজ পাঠান</p>
+        <h1>📢 Telegram Broadcast System</h1>
+        <p class="subtitle">Send messages to all your bot users</p>
 
         <div class="info-box">
-            <h3>কিভাবে ব্যবহার করবেন?</h3>
-            <p>১. আপনার টেলিগ্রাম বট টোকেন দিন<br>
-            ২. যে মেসেজ পাঠাতে চান সেটি লিখুন<br>
-            ৩. "সবার কাছে মেসেজ পাঠান" বাটনে ক্লিক করুন</p>
+            <h3>How to use?</h3>
+            <p>1. Enter your Telegram bot token<br>
+            2. Write the message you want to send<br>
+            3. Click "Send Broadcast Message"<br>
+            <strong>Note:</strong> This will send to ALL users who have ever started your bot, regardless of when they started!</p>
         </div>
 
         <form id="broadcastForm">
             <div class="form-group">
-                <label for="botToken">বট টোকেন</label>
+                <label for="botToken">Bot Token</label>
                 <input 
                     type="text" 
                     id="botToken" 
@@ -223,16 +224,16 @@
             </div>
 
             <div class="form-group">
-                <label for="message">মেসেজ</label>
+                <label for="message">Message</label>
                 <textarea 
                     id="message" 
-                    placeholder="আপনার মেসেজ এখানে লিখুন..."
+                    placeholder="Enter your message here..."
                     required
                 ></textarea>
             </div>
 
             <button type="submit" class="btn" id="sendBtn">
-                সবার কাছে মেসেজ পাঠান
+                Send Broadcast Message
             </button>
         </form>
 
@@ -243,9 +244,9 @@
         </div>
 
         <div class="stats" id="stats">
-            <p><strong>মোট ইউজার:</strong> <span id="totalUsers">0</span></p>
-            <p><strong>সফল:</strong> <span id="successCount">0</span></p>
-            <p><strong>ব্যর্থ:</strong> <span id="failCount">0</span></p>
+            <p><strong>Total Users:</strong> <span id="totalUsers">0</span></p>
+            <p><strong>Successful:</strong> <span id="successCount">0</span></p>
+            <p><strong>Failed:</strong> <span id="failCount">0</span></p>
         </div>
 
         <div class="status" id="status"></div>
@@ -266,39 +267,68 @@
             const message = document.getElementById('message').value.trim();
 
             if (!botToken || !message) {
-                showStatus('দয়া করে সব ফিল্ড পূরণ করুন!', 'error');
+                showStatus('Please fill in all fields!', 'error');
                 return;
             }
 
             sendBtn.disabled = true;
-            showStatus('ইউজার তথ্য সংগ্রহ করা হচ্ছে...', 'loading');
+            showStatus('Collecting user data from all history...', 'loading');
             progressDiv.style.display = 'none';
             statsDiv.style.display = 'none';
 
             try {
-                // Get updates to find all chat IDs
-                const updatesResponse = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates`);
-                const updatesData = await updatesResponse.json();
-
-                if (!updatesData.ok) {
-                    throw new Error('বট টোকেন ভুল হয়েছে! দয়া করে সঠিক টোকেন দিন।');
-                }
-
-                // Extract unique chat IDs
+                // Get ALL updates with maximum limit and offset to fetch historical data
                 const chatIds = new Set();
-                updatesData.result.forEach(update => {
-                    if (update.message && update.message.chat) {
-                        chatIds.add(update.message.chat.id);
+                let offset = 0;
+                let hasMore = true;
+                let totalFetched = 0;
+
+                showStatus('Fetching all user history... This may take a while for bots with many users.', 'loading');
+
+                // Fetch updates in batches to get ALL historical data
+                while (hasMore && totalFetched < 10000) { // Limit to prevent infinite loops
+                    const updatesResponse = await fetch(
+                        `https://api.telegram.org/bot${botToken}/getUpdates?limit=100&offset=${offset}`
+                    );
+                    const updatesData = await updatesResponse.json();
+
+                    if (!updatesData.ok) {
+                        throw new Error('Invalid bot token! Please provide a valid token.');
                     }
-                    if (update.callback_query && update.callback_query.message) {
-                        chatIds.add(update.callback_query.message.chat.id);
+
+                    if (updatesData.result.length === 0) {
+                        hasMore = false;
+                        break;
                     }
-                });
+
+                    // Extract unique chat IDs from all types of updates
+                    updatesData.result.forEach(update => {
+                        if (update.message && update.message.chat) {
+                            chatIds.add(update.message.chat.id);
+                        }
+                        if (update.edited_message && update.edited_message.chat) {
+                            chatIds.add(update.edited_message.chat.id);
+                        }
+                        if (update.callback_query && update.callback_query.message) {
+                            chatIds.add(update.callback_query.message.chat.id);
+                        }
+                        if (update.my_chat_member && update.my_chat_member.chat) {
+                            chatIds.add(update.my_chat_member.chat.id);
+                        }
+                    });
+
+                    // Update offset to get next batch
+                    const lastUpdate = updatesData.result[updatesData.result.length - 1];
+                    offset = lastUpdate.update_id + 1;
+                    totalFetched += updatesData.result.length;
+
+                    showStatus(`Fetched ${totalFetched} updates, found ${chatIds.size} unique users...`, 'loading');
+                }
 
                 const uniqueChatIds = Array.from(chatIds);
 
                 if (uniqueChatIds.length === 0) {
-                    showStatus('কোন ইউজার পাওয়া যায়নি! আপনার বটে কেউ /start দেয়নি।', 'error');
+                    showStatus('No users found! No one has interacted with your bot yet.', 'error');
                     sendBtn.disabled = false;
                     return;
                 }
@@ -308,7 +338,7 @@
                 statsDiv.style.display = 'block';
                 document.getElementById('totalUsers').textContent = uniqueChatIds.length;
                 
-                showStatus(`${uniqueChatIds.length} জন ইউজারের কাছে মেসেজ পাঠানো হচ্ছে...`, 'loading');
+                showStatus(`Sending messages to ${uniqueChatIds.length} users (from all time history)...`, 'loading');
 
                 let successCount = 0;
                 let failCount = 0;
@@ -354,13 +384,13 @@
                 }
 
                 showStatus(
-                    `✅ সম্পন্ন! ${successCount} জনের কাছে সফলভাবে মেসেজ পাঠানো হয়েছে।` + 
-                    (failCount > 0 ? ` ${failCount} জন ব্যর্থ হয়েছে।` : ''),
+                    `✅ Complete! Successfully sent messages to ${successCount} users.` + 
+                    (failCount > 0 ? ` ${failCount} failed (may have blocked the bot).` : ''),
                     'success'
                 );
 
             } catch (error) {
-                showStatus('❌ এরর: ' + error.message, 'error');
+                showStatus('❌ Error: ' + error.message, 'error');
             } finally {
                 sendBtn.disabled = false;
             }
