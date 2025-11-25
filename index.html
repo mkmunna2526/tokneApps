@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>টেলিগ্রাম ব্রডকাস্ট সিস্টেম</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .progress {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stats p {
+            margin: 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .stats strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📢 টেলিগ্রাম ব্রডকাস্ট সিস্টেম</h1>
+        <p class="subtitle">আপনার বটের সকল ইউজারদের কাছে মেসেজ পাঠান</p>
+
+        <div class="info-box">
+            <h3>কিভাবে ব্যবহার করবেন?</h3>
+            <p>১. আপনার টেলিগ্রাম বট টোকেন দিন<br>
+            ২. যে মেসেজ পাঠাতে চান সেটি লিখুন<br>
+            ৩. "সবার কাছে মেসেজ পাঠান" বাটনে ক্লিক করুন</p>
+        </div>
+
+        <form id="broadcastForm">
+            <div class="form-group">
+                <label for="botToken">বট টোকেন</label>
+                <input 
+                    type="text" 
+                    id="botToken" 
+                    placeholder="123456:ABCdefGHIjklMNOpqrsTUVwxyz"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="message">মেসেজ</label>
+                <textarea 
+                    id="message" 
+                    placeholder="আপনার মেসেজ এখানে লিখুন..."
+                    required
+                ></textarea>
+            </div>
+
+            <button type="submit" class="btn" id="sendBtn">
+                সবার কাছে মেসেজ পাঠান
+            </button>
+        </form>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <p><strong>মোট ইউজার:</strong> <span id="totalUsers">0</span></p>
+            <p><strong>সফল:</strong> <span id="successCount">0</span></p>
+            <p><strong>ব্যর্থ:</strong> <span id="failCount">0</span></p>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('broadcastForm');
+        const statusDiv = document.getElementById('status');
+        const sendBtn = document.getElementById('sendBtn');
+        const progressDiv = document.getElementById('progress');
+        const progressFill = document.getElementById('progressFill');
+        const statsDiv = document.getElementById('stats');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const botToken = document.getElementById('botToken').value.trim();
+            const message = document.getElementById('message').value.trim();
+
+            if (!botToken || !message) {
+                showStatus('দয়া করে সব ফিল্ড পূরণ করুন!', 'error');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            showStatus('ইউজার তথ্য সংগ্রহ করা হচ্ছে...', 'loading');
+            progressDiv.style.display = 'none';
+            statsDiv.style.display = 'none';
+
+            try {
+                // Get updates to find all chat IDs
+                const updatesResponse = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates`);
+                const updatesData = await updatesResponse.json();
+
+                if (!updatesData.ok) {
+                    throw new Error('বট টোকেন ভুল হয়েছে! দয়া করে সঠিক টোকেন দিন।');
+                }
+
+                // Extract unique chat IDs
+                const chatIds = new Set();
+                updatesData.result.forEach(update => {
+                    if (update.message && update.message.chat) {
+                        chatIds.add(update.message.chat.id);
+                    }
+                    if (update.callback_query && update.callback_query.message) {
+                        chatIds.add(update.callback_query.message.chat.id);
+                    }
+                });
+
+                const uniqueChatIds = Array.from(chatIds);
+
+                if (uniqueChatIds.length === 0) {
+                    showStatus('কোন ইউজার পাওয়া যায়নি! আপনার বটে কেউ /start দেয়নি।', 'error');
+                    sendBtn.disabled = false;
+                    return;
+                }
+
+                // Show progress
+                progressDiv.style.display = 'block';
+                statsDiv.style.display = 'block';
+                document.getElementById('totalUsers').textContent = uniqueChatIds.length;
+                
+                showStatus(`${uniqueChatIds.length} জন ইউজারের কাছে মেসেজ পাঠানো হচ্ছে...`, 'loading');
+
+                let successCount = 0;
+                let failCount = 0;
+
+                // Send messages
+                for (let i = 0; i < uniqueChatIds.length; i++) {
+                    const chatId = uniqueChatIds[i];
+                    
+                    try {
+                        const sendResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                chat_id: chatId,
+                                text: message,
+                                parse_mode: 'HTML'
+                            })
+                        });
+
+                        const sendData = await sendResponse.json();
+                        
+                        if (sendData.ok) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
+                    } catch (error) {
+                        failCount++;
+                    }
+
+                    // Update progress
+                    const progress = Math.round(((i + 1) / uniqueChatIds.length) * 100);
+                    progressFill.style.width = progress + '%';
+                    progressFill.textContent = progress + '%';
+                    
+                    document.getElementById('successCount').textContent = successCount;
+                    document.getElementById('failCount').textContent = failCount;
+
+                    // Small delay to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                showStatus(
+                    `✅ সম্পন্ন! ${successCount} জনের কাছে সফলভাবে মেসেজ পাঠানো হয়েছে।` + 
+                    (failCount > 0 ? ` ${failCount} জন ব্যর্থ হয়েছে।` : ''),
+                    'success'
+                );
+
+            } catch (error) {
+                showStatus('❌ এরর: ' + error.message, 'error');
+            } finally {
+                sendBtn.disabled = false;
+            }
+        });
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+    </script>
+</body>
+</html>
